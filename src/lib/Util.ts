@@ -1,4 +1,4 @@
-import App, { DrawOptions } from "./App";
+import Scene, { DrawOptions } from "./Scene";
 
 export type WeightMap = {[key: string]: number};
 
@@ -69,6 +69,10 @@ export class Vector2 {
     public static add(vector1: Vector2, vector2: Vector2): Vector2 {
         return new Vector2(vector1.x + vector2.x, vector1.y + vector2.y);
     }
+
+    public equals(other: Vector2) {
+        return this.x == other.x && this.y == other.y;
+    }
 }
 
 /**
@@ -118,6 +122,10 @@ export class Force {
 
     set degrees(degrees: number) {
         this.radians = Angle.toRadians(degrees);
+    }
+
+    public equals(other: Force) {
+        return this.radians == other.radians && this.magnitude == other.magnitude;
     }
 
     public static add(force1: Force, force2: Force): Force {
@@ -185,16 +193,17 @@ export namespace TextHelper {
         return measureTextMetrics(ctx, text, font).width;
     }
 
-    export function writeCenteredTextAt(app: App, text: string, options: Partial<DrawOptions>, font: string = app.zoom * 30 + "px Arial") {
-        const width = measureTextWidth(app.ctx, text, font);
-        const height = measureTextHeight(app.ctx, text, font);
+    export function writeCenteredTextAt(scene: Scene, text: string, options: Partial<DrawOptions>, font: string = scene.app.zoom * 30 + "px Arial") {
+        const width = measureTextWidth(scene.app.ctx, text, font);
+        const height = measureTextHeight(scene.app.ctx, text, font);
 
-        options.draw = function(ctx) {
+        options.draw = (ctx: CanvasRenderingContext2D) => {
             ctx.font = font;
-            ctx.fillText(text, -width / 2, height / 2);
+            if (options.strokeStyle) ctx.strokeText(text, -width / 2, height / 2);
+            if (options.fillStyle) ctx.fillText(text, -width / 2, height / 2);
         };
 
-        app.draw(options as DrawOptions);
+        scene.draw(options as DrawOptions);
     }
 }
 
@@ -397,28 +406,55 @@ export namespace LerpUtils {
     }
 }
 
-export namespace Resource {
-    const resourceMap: Map<string, HTMLImageElement> = new Map();
+export namespace Color {
+    export class RGB {
+        public red: number;
+        public green: number;
+        public blue: number;
 
-    export function load(src: string | URL): Promise<HTMLImageElement> {
-        return new Promise(function(res, rej) {
-            if (src instanceof URL) src = src.href;
+        constructor(red: number, green: number, blue: number) {
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+        }
 
-            const image = new Image();
-            image.onload = () => res(image);
-            image.onerror = err => rej(err);
-            image.onabort = image.onerror;
-            image.src = src;
-        });
+        public toHex(): Hex {
+            const space = (str: string) => Utils.prefixSpacing(str, "0", 2);
+            return new Hex(`#${space(this.red.toString(16))}${space(this.green.toString(16))}${space(this.blue.toString(16))}`);
+        }
+
+        public toString(): string {
+            return `rgb(${this.red}, ${this.green}, ${this.blue})`;
+        }
+
+        public clone(): RGB {
+            return new RGB(this.red, this.green, this.blue);
+        }
     }
-    
-    export function loadAndSave(name: string, src: string | URL): Promise<void> {
-        return new Promise(function(res, rej) {
-            load(src).then(img => res(void resourceMap.set(name, img))).catch(rej);
-        });
-    }
 
-    export function get(name: string): HTMLImageElement | null {
-        return resourceMap.get(name) || null;
+    export class Hex {
+        private _value: number;
+
+        constructor(hexadecimal: number | string) {
+            if (Number.isInteger(hexadecimal)) {
+                this._value = +hexadecimal;
+            } else {
+                this._value = parseInt(hexadecimal.toString().substring(1), 16);
+            }
+        }
+
+
+        public toRGB(): RGB {
+            const stringified = this.toString();
+            return new RGB(parseInt(stringified.substring(1, 3), 16), parseInt(stringified.substring(3, 5), 16), parseInt(stringified.substring(5, 7), 16));
+        }
+
+        public toString(): string {
+            return `#${Utils.prefixSpacing(this._value.toString(16), "0", 6)}`;
+        }
+
+        public clone(): Hex {
+            return new Hex(this.toString());
+        }
     }
 }

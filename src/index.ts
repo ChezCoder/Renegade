@@ -1,24 +1,21 @@
-import App from "./App";
-import demo from "./Scenes/demo";
-import demo2 from "./Scenes/demo2";
+import { GameService } from "./game";
+import App from "./lib/App";
+import GameScene from "./Scenes/Game";
+import LobbyScene from "./Scenes/Lobby";
+import TitleScreenScene from "./Scenes/TitleScreen";
 
 let app: App;
 
 $(function() {
     app = new App(window.innerWidth, window.innerHeight);
 
-    app.addScene(new demo(app, "demo"));
-    app.addScene(new demo2(app, "demo2"));
+    GameService.app = app;
+    
+    app.addScene(new TitleScreenScene(app));
+    app.addScene(new LobbyScene(app));
+    app.addScene(new GameScene(app));
 
-    app.enableScene("demo");
-
-    app.loop = function() {
-        if (app.inputDriver.keyPress == "1") {
-            app.enableScene("demo");
-        } else if (app.inputDriver.keyPress == "2") {
-            app.enableScene("demo2");
-        }
-    }
+    app.enableScene("titleScreen");
 });
 
 $(window).on("resize", function() {

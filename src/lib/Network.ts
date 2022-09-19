@@ -36,8 +36,10 @@ export default class WSNetworkDriver {
                     if (event) {
                         const callbacks = this._registeredEvents[event];
 
-                        for (const callback of callbacks) {
-                            callback?.bind(this._websocket)(packet);
+                        if (callbacks) {
+                            for (const callback of callbacks) {
+                                callback?.bind(this._websocket)(packet);
+                            }
                         }
                     }
                 }
@@ -70,6 +72,18 @@ export default class WSNetworkDriver {
             for (let index of indices) {
                 this._registeredEvents[event][index] = null;
             }
+        }
+    }
+
+    public clearListeners() {
+        this._registeredEvents = {};
+    }
+
+    public send(packet: { [key: string]: string } | BasePacket) {
+        if (packet instanceof BasePacket) {
+            this.websocket?.send(JSON.stringify(packet.value()));
+        } else {
+            this.websocket?.send(JSON.stringify(packet));
         }
     }
 
@@ -215,5 +229,11 @@ export namespace Network {
                 }
             });
         });
+    }
+}
+
+export abstract class BasePacket {
+    public value(): { [key: string]: any } {
+        return {};
     }
 }

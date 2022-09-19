@@ -1,3 +1,23 @@
+@font-face {
+    src: url("./assets/fonts/glaive-regular.woff");
+    font-family: "Glaive Regular";
+}
+
+@font-face {
+    font-family: "GameOver Regular";
+    src: url("./assets/fonts/GameOver-Regular.woff2") format("woff2"),
+        url("./assets/fonts/GameOver-Regular.woff") format("woff"),
+        url("./assets/fonts/GameOver-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Helios Regular";
+    src: url("./assets/fonts/Helios Regular.ttf") format("truetype");
+}
+
 html, body {
     margin: 0px;
     padding: 0px;

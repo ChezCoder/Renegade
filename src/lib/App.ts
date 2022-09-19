@@ -3,25 +3,52 @@ import Scene from "./Scene";
 import { InputDriver } from "./UserInput";
 import { Vector2 } from "./Util";
 
-export interface DrawOptions {
-    draw: (ctx: CanvasRenderingContext2D) => void
-    origin?: Vector2
-    strokeStyle?: string
-    fillStyle?: string
-    lineWidth?: number
-    alpha?: number
-    rotation?: number
-}
+export type CursorOptions = "alias" |
+    "all-scroll" |
+    "auto" |
+    "cell" |
+    "col-resize" |
+    "context-menu" |
+    "copy" |
+    "crosshair" |
+    "default" |
+    "e-resize" |
+    "ew-resize" |
+    "grab" |
+    "grabbing" |
+    "help" |
+    "move" |
+    "n-resize" |
+    "ne-resize" |
+    "nesw-resize" |
+    "ns-resize" |
+    "nw-resize" |
+    "nwse-resize" |
+    "no-drop" |
+    "none" |
+    "not-allowed" |
+    "pointer" |
+    "progress" |
+    "row-resize" |
+    "s-resize" |
+    "se-resize" |
+    "sw-resize" |
+    "text" |
+    "w-resize" |
+    "wait" |
+    "zoom-in" |
+    "zoom-out";
 
 export default class App {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
 
-    public socket: WSNetworkDriver;
-    public inputDriver: InputDriver;
+    public network: WSNetworkDriver;
+    public input: InputDriver;
     public setup: () => void = () => {};
     public loop: () => void = () => {};
     public clear: boolean = true;
+    public storage: Map<String, any> = new Map();
     
     public cameraOffset: Vector2 = new Vector2(0, 0);
     public zoom: number = 1;
@@ -38,8 +65,8 @@ export default class App {
         this.ctx = this.canvas.getContext("2d")!;
 
         this._scenes = new Map();
-        this.socket = new WSNetworkDriver();
-        this.inputDriver = new InputDriver(this);
+        this.network = new WSNetworkDriver();
+        this.input = new InputDriver(this);
 
         this.width = width;
         this.height = height;
@@ -47,31 +74,6 @@ export default class App {
         document.body.appendChild(this.canvas);
 
         this._setup();
-    }
-
-    public draw(options: DrawOptions): void {
-        this.ctx.save();
-        this.ctx.beginPath();
-
-        if (options.origin) {
-            const offset = this.getVisualPosition(options.origin);
-            this.ctx.translate(offset.x, offset.y);
-        }
-        
-        this.ctx.strokeStyle = options.strokeStyle || "#000000";
-        this.ctx.fillStyle = options.fillStyle || "#000000";
-        this.ctx.globalAlpha = options.alpha || 1;
-        this.ctx.lineWidth = options.lineWidth || 1;
-
-        if (options.rotation) this.ctx.rotate(options.rotation);
-
-        options.draw(this.ctx);
-
-        if (options.strokeStyle) this.ctx.stroke();
-        if (options.fillStyle) this.ctx.fill();
-
-        this.ctx.closePath();
-        this.ctx.restore();
     }
 
     public getVisualPosition(position: Vector2): Vector2 {
@@ -87,8 +89,14 @@ export default class App {
     }
 
     public enableScene(name: string) {
-        this._scenes.get(name)?.setup();
-        this._scene = name;
+        const scene = this._scenes.get(name);
+        if (scene) {
+            if (scene.persistResources) scene.resource.clear();
+            this._scene = name;
+            scene.setup();
+        } else {
+            throw new ReferenceError("No registered scene with that name");
+        }
     }
     
     private _setup() {
@@ -98,11 +106,13 @@ export default class App {
 
     private raf() {
         window.requestAnimationFrame(this.raf.bind(this));
-        this.inputDriver.step();
+        this.input.step();
         this.loop.apply(this);
         
-        if (this.clear)
+        if (this.clear) {
             this.ctx.clearRect(0, 0, this._width, this._height);
+            this.cursor = "default";
+        }
         
         this._scenes.get(this._scene || "")?.loop();
         this._lastFrameTimestamp = Date.now();
@@ -136,5 +146,17 @@ export default class App {
 
     get deltaTime(): number {
         return (Date.now() - this._lastFrameTimestamp) / (1000 / this.targetFramerate);
+    }
+
+    set cursor(cursor: CursorOptions | URL) {
+        if (cursor instanceof URL) {
+            this.canvas.style.cursor = `url("${cursor.href}")`;
+        } else {
+            this.canvas.style.cursor = cursor;
+        }
+    }
+
+    get cursor(): CursorOptions | URL {
+        return this.canvas.style.cursor as CursorOptions | URL;
     }
 }
