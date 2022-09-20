@@ -12,6 +12,20 @@ export interface DrawOptions {
     rotation?: number
 }
 
+export abstract class Renderable<S = Scene> {
+    protected scene: S;
+
+    constructor(scene: S) {
+        this.scene = scene;
+    }
+
+    public value(): DrawOptions {
+        return {
+            "draw": () => {}
+        }
+    }
+}
+
 export default abstract class Scene {
     readonly app: App;
     readonly ctx: CanvasRenderingContext2D;
@@ -31,7 +45,11 @@ export default abstract class Scene {
 
     public loop() {}
 
-    public draw(options: DrawOptions): void {
+    public draw(options: DrawOptions | Renderable): void {
+        if (options instanceof Renderable) {
+            options = options.value();
+        }
+        
         this.ctx.save();
         this.ctx.beginPath();
 
