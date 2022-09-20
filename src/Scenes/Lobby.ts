@@ -57,7 +57,9 @@ export default class LobbyScene extends Scene {
             let url: URL;
 
             try {
-                url = new URL(`ws${location.protocol == "https:" ? "s" : ""}://${GameService.SERVER_HOST}:${GameService.DEFAULT_PORT}`);
+                url = new URL(GameService.SERVER_HOST || "");
+                url.protocol = url.protocol == "https:" ? "wss:" : "ws:";
+                url.port = url.port || GameService.DEFAULT_PORT.toString();
             } catch {
                 instance.app.enableScene("error");
                 instance.app.storage.set("error", "Invalid server hostname");
