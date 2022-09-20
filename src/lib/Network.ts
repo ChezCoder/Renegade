@@ -1,5 +1,5 @@
 export default class WSNetworkDriver {
-    public url?: URL;
+    public url?: string;
     public onOpen: () => void = () => {};
     public onMessage: (message: string) => void = () => {};
     public onClose: (code: number) => void = () => {};
@@ -12,8 +12,8 @@ export default class WSNetworkDriver {
 
     constructor(url?: string | URL) {
         if (url) {
-            this.url = url instanceof URL ? url : new URL(url);
-            if (!["ws:", "wss:"].includes(this.url.protocol)) throw new TypeError(`Invalid protocol (${this.url.protocol}) for websocket`);
+            this.url = url instanceof URL ? url.href : url;
+            if (!(this.url.startsWith("ws:") || this.url.startsWith("wss:"))) throw new TypeError(`Invalid protocol ${this.url.split(":")[0]} for websocket`);
         }
     }
 

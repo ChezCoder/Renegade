@@ -60,11 +60,19 @@ export default class LobbyScene extends Scene {
                 if (GameService.SERVER_HOST) {
                     if (GameService.SERVER_HOST.startsWith("https://") || GameService.SERVER_HOST.startsWith("http://") || 
                     GameService.SERVER_HOST.startsWith("ws://") || GameService.SERVER_HOST.startsWith("wss://")) {
-                        url = new URL("https://" + GameService.SERVER_HOST);
-                    } else {
                         url = new URL(GameService.SERVER_HOST);
+                    } else {
+                        url = new URL("https://" + GameService.SERVER_HOST);
                     }
-                    url.protocol = location.protocol == "https:" ? "wss:" : "ws:";
+                    
+                    if (GameService.SERVER_HOST.endsWith(":443") || GameService.SERVER_HOST.endsWith(":443/")) {
+                        url.port = "0";
+                    }
+
+                    if (!url.protocol.startsWith("ws")) {
+                        url.protocol = location.protocol == "https:" ? "wss:" : "ws:";
+                    }
+
                     url.port = url.port || GameService.DEFAULT_PORT.toString();
                 } else {
                     throw new Error("Invalid server hostname");
@@ -75,7 +83,11 @@ export default class LobbyScene extends Scene {
                 return;
             }
 
-            instance.app.network.url = url;
+            if (url.port === "0") {
+                url.port = "443";
+            }
+
+            instance.app.network.url = url.href;
             instance.app.network.eventPacketProperty = "e";
 
             instance.app.network.on("HELLO", packet => {
@@ -150,6 +162,7 @@ export default class LobbyScene extends Scene {
                     
                     instance.app.enableScene("error");
                     instance.app.storage.set("error", "Invalid server hostname");
+                    instance.app.storage.set("error_details", `${instance.app.network.url || ""}`);
                 });
             };
 

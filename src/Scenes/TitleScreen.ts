@@ -170,7 +170,6 @@ export default class TitleScreenScene extends Scene {
             }
         } else {
             this.bufferedPlayButtonColor = new Color.RGB(255, 255, 255);
-            this.app.cursor = "default";
         }
 
         this.titleTextJitteredPosition.x = LerpUtils.lerp(this.titleTextJitteredPosition.x, this.bufferedTitleTextJitterPosition.x, this.lerpRate);

@@ -61,9 +61,17 @@ export default class ErrorScene extends Scene {
                 
                 TextHelper.writeCenteredTextAt(this, error, {
                     "fillStyle": "#ff0000",
-                    "origin": this.app.center,
+                    "origin": new Vector2(this.app.center.x, this.app.center.y - 20),
                     "alpha": this.errorMessageAlpha
                 }, "30px Helios Regular");
+
+                const details = this.app.storage.get("error_details") || "";
+                
+                TextHelper.writeCenteredTextAt(this, details, {
+                    "fillStyle": "#ff0000",
+                    "origin": new Vector2(this.app.center.x, this.app.center.y + 20),
+                    "alpha": this.errorMessageAlpha
+                }, "20px Helios Regular");
             }
         });
 
@@ -82,6 +90,8 @@ export default class ErrorScene extends Scene {
                 if (Utils.isPointInRectangle(this.app.input.mousePos, pos, width, height)) {
                     this.bufferedErrorButtonColor = new Color.RGB(255, 0, 0);
 
+                    this.app.cursor = "pointer";
+
                     if (this.app.input.mouseClick && !this.transitioning) {
                         this.bufferedErrorButtonAlpha = 0;
                         this.bufferedErrorMessageAlpha = 0;
@@ -95,6 +105,9 @@ export default class ErrorScene extends Scene {
                             yield new WaitFor(() => instance.errorMessageAlpha <= 0.05);
     
                             instance.app.enableScene("titleScreen");
+
+                            instance.app.storage.set("error", "");
+                            instance.app.storage.set("error_details", "");
                         });
                     }
 
