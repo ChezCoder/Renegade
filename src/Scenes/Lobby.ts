@@ -18,7 +18,7 @@ export default class LobbyScene extends Scene {
 
     public setup(): void {
         this.app.network.clearListeners();
-        
+
         this.loadingText = "Waiting For Players";
         this.loadingOpacity = 0;
 
@@ -57,7 +57,7 @@ export default class LobbyScene extends Scene {
             let url: URL;
 
             try {
-                url = new URL(`ws://${GameService.SERVER_HOST}:${GameService.DEFAULT_PORT}`);
+                url = new URL(`ws${location.protocol == "https:" ? "s" : ""}://${GameService.SERVER_HOST}:${GameService.DEFAULT_PORT}`);
             } catch {
                 instance.app.enableScene("error");
                 instance.app.storage.set("error", "Invalid server hostname");
