@@ -7,7 +7,7 @@
   },
   "name": "renegade",
   "description": "renegade",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "main": "",
   "directories": {
     "test": "tests"
