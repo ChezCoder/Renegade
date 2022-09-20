@@ -58,7 +58,7 @@ export default class LobbyScene extends Scene {
 
             try {
                 url = new URL(GameService.SERVER_HOST || "");
-                url.protocol = url.protocol == "https:" ? "wss:" : "ws:";
+                url.protocol = location.protocol == "https:" ? "wss:" : "ws:";
                 url.port = url.port || GameService.DEFAULT_PORT.toString();
             } catch {
                 instance.app.enableScene("error");
