@@ -96,28 +96,31 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
     public bufferedAlpha: number;
     private globalAlpha: number;
 
-    private position: Vector2;
+    private x: number;
+    private y: number;
 
     private buttonGap: number = 20;
 
     private lerpRate: number = 0.1;
 
-    constructor(scene: TitleScreenScene, position: Vector2, options: string[]) {
+    constructor(scene: TitleScreenScene, y: number, options: string[]) {
         super(scene);
 
         this.options = options
         this.selectedIndex = 0;
-        this.position = position;
+        
+        this.y = y;
+        this.x = scene.app.center.x.valueOf();
 
         this.globalAlpha = 0;
         this.bufferedAlpha = this.globalAlpha.valueOf();
 
-        this.leftX = position.x - this.buttonGap;
+        this.leftX = this.x - this.buttonGap;
         this.bufferedLeftX = this.leftX.valueOf();
         this.leftColor = new Color.Hex("#ffffff").toRGB();
         this.bufferedLeftColor = this.leftColor.clone();
 
-        this.rightX = position.x + this.buttonGap;
+        this.rightX = this.x + this.buttonGap;
         this.bufferedRightX = this.rightX.valueOf();
         this.rightColor = new Color.Hex("#ffffff").toRGB();
         this.bufferedRightColor = this.rightColor.clone();
@@ -138,25 +141,28 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
         this.leftX = LerpUtils.lerp(this.leftX, this.bufferedLeftX - selectedW / 2, this.lerpRate);
         this.rightX = LerpUtils.lerp(this.rightX, this.bufferedRightX + selectedW / 2, this.lerpRate);
 
+        this.x = LerpUtils.lerp(this.x, this.scene.app.center.x, this.lerpRate);
+
         this.globalAlpha = LerpUtils.lerp(this.globalAlpha, this.bufferedAlpha, this.lerpRate / 2);
+
+        this.bufferedLeftX = this.x - this.buttonGap;
+        this.bufferedRightX = this.x + this.buttonGap;
 
         return {
             "draw": () => {
                 const sideHitboxSize = 15;
                 const gapY = 5;
 
-                console.log(this.globalAlpha);
-
                 TextHelper.writeCenteredTextAt(this.scene, "<", {
                     "fillStyle": this.leftColor.toString(),
-                    "origin": new Vector2(this.leftX, this.position.y + gapY),
+                    "origin": new Vector2(this.leftX, this.y + gapY),
                     "alpha": this.globalAlpha
                 }, `40px ${font} Regular`);
 
                 if (this.selectedIndex === 0) {
                     this.bufferedLeftColor = new Color.RGB(0, 0, 0);
                 } else {
-                    if (Utils.isPointInRectangle(this.scene.app.input.mousePos, new Vector2(this.leftX - sideHitboxSize / 2, this.position.y + gapY - sideHitboxSize / 2), sideHitboxSize, sideHitboxSize)) {
+                    if (Utils.isPointInRectangle(this.scene.app.input.mousePos, new Vector2(this.leftX - sideHitboxSize / 2, this.y + gapY - sideHitboxSize / 2), sideHitboxSize, sideHitboxSize)) {
                         if (this.scene.app.input.mouseClick) {
                             this.selectedIndex--;
                         }
@@ -168,22 +174,16 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
                     }
                 }
 
-                TextHelper.writeCenteredTextAt(this.scene, this.options[this.selectedIndex], {
-                    "fillStyle": "#ffffff",
-                    "origin": new Vector2(this.position.x, this.position.y),
-                    "alpha": this.globalAlpha
-                }, `25px ${font} Regular`);
-
                 TextHelper.writeCenteredTextAt(this.scene, ">", {
                     "fillStyle": this.rightColor.toString(),
-                    "origin": new Vector2(this.rightX, this.position.y + gapY),
+                    "origin": new Vector2(this.rightX, this.y + gapY),
                     "alpha": this.globalAlpha
                 }, `40px ${font} Regular`);
 
                 if (this.selectedIndex === (this.options.length - 1)) {
                     this.bufferedRightColor = new Color.RGB(0, 0, 0);
                 } else {
-                    if (Utils.isPointInRectangle(this.scene.app.input.mousePos, new Vector2(this.rightX - sideHitboxSize / 2, this.position.y + gapY - sideHitboxSize / 2), 25, 25)) {
+                    if (Utils.isPointInRectangle(this.scene.app.input.mousePos, new Vector2(this.rightX - sideHitboxSize / 2, this.y + gapY - sideHitboxSize / 2), 25, 25)) {
                         if (this.scene.app.input.mouseClick) {
                             this.selectedIndex++;
                         }
@@ -194,6 +194,12 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
                         this.bufferedRightColor = new Color.RGB(255, 255, 255);
                     }
                 }
+
+                TextHelper.writeCenteredTextAt(this.scene, this.options[this.selectedIndex], {
+                    "fillStyle": "#ffffff",
+                    "origin": new Vector2(this.x, this.y),
+                    "alpha": this.globalAlpha
+                }, `25px ${font} Regular`);
             }
         }
     }
@@ -350,7 +356,7 @@ export default class TitleScreenScene extends Scene {
             this.app.enableScene("lobby");
         };
         
-        this.publicServerGamemodeSelector = new OptionsSelector(this, new Vector2(this.app.center.x, this.app.center.y + 30), [
+        this.publicServerGamemodeSelector = new OptionsSelector(this, this.app.center.y + 30, [
             "Standard",
             "Rush",
             "Testing",
