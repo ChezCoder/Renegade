@@ -77,7 +77,7 @@ export default class ErrorScene extends Scene {
 
         this.draw({
             "draw": ctx => {
-                TextHelper.writeCenteredTextAt(this, "Back", {
+                TextHelper.writeCenteredTextAt(this, "back", {
                     "fillStyle": this.errorButtonColor.toString(),
                     "origin": new Vector2(this.app.center.x, this.app.height * 0.6),
                     "alpha": this.errorButtonAlpha

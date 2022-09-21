@@ -2,7 +2,7 @@ import { GameService } from "./game";
 import App from "./lib/App";
 import ErrorScene from "./Scenes/Error";
 import GameScene from "./Scenes/Game";
-import LobbyScene from "./Scenes/Lobby";
+import LobbyScene from "./Scenes/PublicLobby";
 import TitleScreenScene from "./Scenes/TitleScreen";
 
 let app: App;

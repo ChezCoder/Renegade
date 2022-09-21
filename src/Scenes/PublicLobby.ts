@@ -133,10 +133,19 @@ export default class LobbyScene extends Scene {
             });
 
             instance.app.network.on("ERROR", packet => {
+                console.log(packet.d.reason);
+
                 if (packet.d.close) {
                     instance.app.network.onClose(0);
                 }
-                console.error(packet.d.reason);
+                
+                Routine.startTask(function*() {
+                    yield new WaitForMillis(100);
+                    
+                    instance.app.storage.set("error", "Client error");
+                    instance.app.storage.set("error_details", packet.d.reason);
+                    instance.app.enableScene("error");
+                });
             });
             
             instance.app.network.onOpen = () => {
@@ -151,18 +160,28 @@ export default class LobbyScene extends Scene {
                 });
             }
 
-            instance.app.network.onClose = () => {
+            instance.app.network.onClose = code => {
+                if (code.toString() != "1001" || code.toString() != "1000") {
+                    instance.app.storage.set("error", "Server error");
+                    instance.app.storage.set("error_details", `A server-side error occurred`);
+                } else {
+                    instance.app.storage.set("error", "Room closed");
+                    instance.app.storage.set("error_details", `Room was forcefully closed by the server`);
+                }
+                
+                instance.app.enableScene("error");
                 instance.app.storage.set("heartbeat", false);
-                instance.app.enableScene("titleScreen");
             }
 
-            instance.app.network.onError = () => {
+            instance.app.network.onError = error => {
+                console.log(error);
+
                 Routine.startTask(function*() {
                     yield new WaitForMillis(100);
                     
-                    instance.app.enableScene("error");
                     instance.app.storage.set("error", "Invalid server hostname");
                     instance.app.storage.set("error_details", `${instance.app.network.url || ""}`);
+                    instance.app.enableScene("error");
                 });
             };
 
