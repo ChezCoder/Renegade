@@ -96,7 +96,7 @@ export default class LobbyScene extends Scene {
 
                 console.log("sending room request...");
 
-                instance.app.network.send(new PacketService.RequestRoomPacket());
+                instance.app.network.send(new PacketService.RequestRoomPacket(instance.app.storage.get("gamemode")));
             });
 
             instance.app.network.on("ROOM_DATA", packet => {

@@ -54,7 +54,7 @@ export default abstract class Scene {
         this.ctx.beginPath();
 
         if (options.origin) {
-            const offset = this.app.getVisualPosition(options.origin);
+            const offset = options.origin;
             this.ctx.translate(offset.x, offset.y);
         }
         

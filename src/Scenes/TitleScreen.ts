@@ -128,7 +128,7 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
 
     public value(): DrawOptions {
         const font = "GameOver";
-        const selectedW = TextHelper.measureTextWidth(this.scene.app.ctx, this.options[this.selectedIndex], `25px ${font} Regular`);
+        const selectedW = TextHelper.measureTextWidth(this.scene.app.ctx, this.selected, `25px ${font} Regular`);
 
         this.leftColor.red = LerpUtils.lerp(this.leftColor.red, this.bufferedLeftColor.red, this.lerpRate);
         this.leftColor.green = LerpUtils.lerp(this.leftColor.green, this.bufferedLeftColor.green, this.lerpRate);
@@ -195,13 +195,19 @@ class OptionsSelector extends Renderable<TitleScreenScene> {
                     }
                 }
 
-                TextHelper.writeCenteredTextAt(this.scene, this.options[this.selectedIndex], {
+                TextHelper.writeCenteredTextAt(this.scene, this.selected, {
                     "fillStyle": "#ffffff",
                     "origin": new Vector2(this.x, this.y),
                     "alpha": this.globalAlpha
                 }, `25px ${font} Regular`);
+
+                this.scene.app.storage.set("gamemode", this.selectedIndex);
             }
         }
+    }
+
+    public get selected(): string {
+        return this.options[this.selectedIndex];
     }
 }
 
@@ -344,6 +350,14 @@ export default class TitleScreenScene extends Scene {
     
     constructor(app: App) {
         super(app, "titleScreen");
+
+        this.publicServerGamemodeSelector = new OptionsSelector(this, this.app.center.y + 30, [
+            "Standard",
+            "Rush",
+            "Testing",
+            "TestHelloWorld",
+            "Test"
+        ]);
     }
     
     public setup(): void {
@@ -355,14 +369,6 @@ export default class TitleScreenScene extends Scene {
         this.publicServerButton.onclick = () => {
             this.app.enableScene("lobby");
         };
-        
-        this.publicServerGamemodeSelector = new OptionsSelector(this, this.app.center.y + 30, [
-            "Standard",
-            "Rush",
-            "Testing",
-            "TestHelloWorld",
-            "Test"
-        ]);
 
         this.privateServerButton = new Button(this, "private", this.app.center.y + 80);
         this.privateServerButton.onclick = () => {

@@ -33,22 +33,31 @@ export namespace PacketService {
         }
     }
 
-    export class CursorLocationPacket extends BasePacket {
+    export class LocationPacket extends BasePacket {
         public value(): Packet {
             return {
-                "e": "CURSOR_LOCATION",
+                "e": "LOCATION",
                 "d": {
                     "client": GameService.clientPlayer.simplify(),
-                    "location": GameService.app.input.mousePos.simplify()
+                    "location": GameService.clientPlayer.position.simplify()
                 }
             }
         }
     }
 
     export class RequestRoomPacket extends BasePacket {
+        private mode: number;
+
+        constructor(mode: number) {
+            super();
+            this.mode = mode;
+        }
         public value(): Packet {
             return {
-                "e": "REQUEST_ROOM"
+                "e": "REQUEST_ROOM",
+                "d": {
+                    "mode": this.mode
+                }
             }
         }
     }
