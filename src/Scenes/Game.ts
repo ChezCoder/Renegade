@@ -1,7 +1,7 @@
 import { GameService } from "../game";
 import App from "../lib/App";
 import Scene, { DrawOptions, Renderable } from "../lib/Scene";
-import { Angle, Color, Force, Utils, Vector2 } from "../lib/Util";
+import { Angle, Color, Force, LerpUtils, Utils, Vector2 } from "../lib/Util";
 import { PacketService } from "../packet";
 
 const PLAYER_ACCELERATION = 1;
@@ -39,14 +39,21 @@ class Player extends Renderable<GameScene> {
 
 export default class GameScene extends Scene {
     public clientPlayerRenderable!: Player;
-
     public otherPlayerRenderables!: Player[];
+
+    private cameraDelay!: Vector2;
+    private cameraXDelayLerp!: number;
+    private cameraYDelayLerp!: number;
+    private delayDistance!: number;
 
     constructor(app: App) {
         super(app, "mainGame");
     }
     
     public setup(): void {
+        this.cameraDelay = new Vector2(0, 0);
+        this.delayDistance = 50;
+
         this.clientPlayerRenderable = new Player(this, "#00ff00", Color.Enum.DARK_GREEN);
         this.otherPlayerRenderables = [];
 
@@ -65,8 +72,6 @@ export default class GameScene extends Scene {
                 const client = packet.d.clients[i];
 
                 if (client.id === GameService.clientPlayer.id) {
-                    this.clientPlayerRenderable.position = this.app.getVisualPosition(new Vector2(client.location.x, client.location.y));
-                    this.app.cameraOffset = new Vector2(this.app.center.x - client.location.x, this.app.center.y - client.location.y);
                     playerRenderableIndexOffset++;
                 } else {
                     this.otherPlayerRenderables[i - playerRenderableIndexOffset].position = this.app.getVisualPosition(new Vector2(client.location.x, client.location.y));
@@ -76,38 +81,49 @@ export default class GameScene extends Scene {
     }
 
     public loop(): void {
-        let x_axis_mod = false;
-        let y_axis_mod = false;
+        let x_axis_mod = 0;
+        let y_axis_mod = 0;
+
+        // TODO add camera lerp
 
         if (this.app.input.keysDown.includes(this.app.storage.get("upward_keybind"))) {
-            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(270), PLAYER_SPEED * PLAYER_ACCELERATION));
-            y_axis_mod = true;
+            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(270), PLAYER_SPEED * PLAYER_ACCELERATION * this.app.deltaTime));
+            y_axis_mod = -1;
         }
 
         if (this.app.input.keysDown.includes(this.app.storage.get("downward_keybind"))) {
-            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(90), PLAYER_SPEED * PLAYER_ACCELERATION));
-            y_axis_mod = true;
+            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(90), PLAYER_SPEED * PLAYER_ACCELERATION * this.app.deltaTime));
+            y_axis_mod = 1;
         }
 
         if (this.app.input.keysDown.includes(this.app.storage.get("leftward_keybind"))) {
-            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(180), PLAYER_SPEED * PLAYER_ACCELERATION));
-            x_axis_mod = true;
+            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(180), PLAYER_SPEED * PLAYER_ACCELERATION * this.app.deltaTime));
+            x_axis_mod = -1;
         }
 
         if (this.app.input.keysDown.includes(this.app.storage.get("rightward_keybind"))) {
-            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(0), PLAYER_SPEED * PLAYER_ACCELERATION));
-            x_axis_mod = true;
+            GameService.clientPlayer.velocity.add(new Force(Angle.toRadians(0), PLAYER_SPEED * PLAYER_ACCELERATION * this.app.deltaTime));
+            x_axis_mod = 1;
         }
         
         const XY_PARTS = GameService.clientPlayer.velocity.toVector()
 
         if (!x_axis_mod) {
             XY_PARTS.x *= 1 - PLAYER_DAMPING;
+            this.cameraXDelayLerp = 0.05;
+        } else {
+            this.cameraXDelayLerp = 0.05;
         }
         
         if (!y_axis_mod) {
             XY_PARTS.y *= 1 - PLAYER_DAMPING;
+            this.cameraYDelayLerp = 0.05;
+        } else {
+            this.cameraYDelayLerp = 0.05;
         }
+
+        this.cameraDelay.x = LerpUtils.lerp(this.cameraDelay.x, x_axis_mod * this.delayDistance, this.cameraXDelayLerp);
+        this.cameraDelay.y = LerpUtils.lerp(this.cameraDelay.y, y_axis_mod * this.delayDistance, this.cameraYDelayLerp);
         
         GameService.clientPlayer.velocity = XY_PARTS.toForce();
         GameService.clientPlayer.velocity.magnitude = Utils.clamp(GameService.clientPlayer.velocity.magnitude, 0, PLAYER_SPEED);
@@ -115,6 +131,10 @@ export default class GameScene extends Scene {
         this.app.network.send(new PacketService.LocationPacket());
         
         GameService.clientPlayer.loop();
+        
+        this.app.cameraOffset = Vector2.add(this.cameraDelay, new Vector2(this.app.center.x - GameService.clientPlayer.position.x, this.app.center.y - GameService.clientPlayer.position.y));
+        
+        this.clientPlayerRenderable.position = Vector2.add(this.cameraDelay, this.app.center);
 
         this.otherPlayerRenderables.forEach(renderable => this.draw(renderable));
         this.draw(this.clientPlayerRenderable);
